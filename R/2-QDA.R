@@ -1,6 +1,5 @@
 # Load clean data from ProcessedData
 train <- read.csv("ProcessedData//clean-train.csv")
-train1 <- train[,c(3,4,5,7,9,10,12,14,17)]
 
 names(train)
 head(train, 5)
@@ -10,14 +9,11 @@ df <- train[, c("Ticket", "Cabin", "Fare")]
 
 # First Letter of Cabin
 train$CabinClass <- substr(as.character(train$Cabin), 0, 1)
-
 splitted.cabin <- strsplit(as.character(train$Cabin), " ")
 train$CabinCount <- sapply(splitted.cabin, length)
 
 # Divide Fare / # of Cabin
-
 train$IndividualFare <- train$Fare
-
 boolean <- train$CabinCount != 0
 train$IndividualFare[boolean] <- train$Fare[boolean] / train$CabinCount[boolean]
 
@@ -38,7 +34,7 @@ library(gdata)
 train$Front <- trim(sapply(splitted.ticket, join.front))
 table(sapply(splitted.ticket, length))
 train$Last <- trim(sapply(splitted.ticket,
-                  function(x) {x[length(x)]}))
+                          function(x) {x[length(x)]}))
 
 # split the train by 70%:30%
 set.seed(-1025)
@@ -46,34 +42,32 @@ train.sample <- train[sample(nrow(train), nrow(train) * 0.7), ]
 indexes <- as.vector(train.sample[, 1])
 test.sample <- subset(train, !train[, 1] %in% indexes)
 
-# Building Model
-
+## Building Model
 names(train.sample)
 
-# Logistic Model
-interesting.columns <- c("Pclass", "Sex", "age2", "Parch", "SibSp", "IndividualFare", "CabinClass", "Embarked", "Survived")
-
+## Select interesting columns for QDA model
 interesting.columns <- c("Pclass", "Sex", "age2", "Parch", "SibSp", "Embarked", "Survived")
 df <- train.sample[, interesting.columns]
 
+# Model QDA
+#install.packages("MASS")
+library(MASS)
 
-model.log <- glm(Survived ~ ., data=df, family="binomial")
+sapply(df, class)
+df.new <- na.omit(df)
 
-predicted <- predict(model.log, type="response")
+names(df)
+sapply(df, class)
+model.qda <- qda(Survived ~ as.factor(Sex) + age2 + as.factor(Pclass)
+                 + Parch + SibSp, data=df)
 
-train.prediction <- rep(0, nrow(df))
-train.prediction[predicted > 0.5] = 1
-table(train.prediction, df$Survived)
-mean(train.prediction == df$Survived)
+predicted <- predict(model.qda, df)$class
+summary(predicted)
+table(predicted, df$Survived)
+mean(predicted == df$Survived)
 
-test.predicted <- predict(model.log, test.sample, type="response")
-test.prediction <- rep(0, nrow(test.sample))
-test.prediction[test.predicted > 0.5] = 1
-model.log.table <- table(test.prediction, test.sample$Survived)
-model.log.table
-model.log.mean <- mean(test.prediction == test.sample$Survived)
-model.log.mean
+test.predicted <- predict(model.qda, test.sample)$class
+table(test.predicted, test.sample$Survived)
+model.qda.mean <- mean(test.predicted == test.sample$Survived)
+model.qda.mean
 
-summary(model.log)
-
-#
