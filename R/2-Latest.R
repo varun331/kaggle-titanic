@@ -1,5 +1,6 @@
 # Load clean data from ProcessedData
 train <- read.csv("ProcessedData//clean-train.csv")
+train1 <- train[,c(3,4,5,7,9,10,12,14,17)]
 
 names(train)
 head(train, 5)
@@ -74,3 +75,5 @@ model.log.mean <- mean(test.prediction == test.sample$Survived)
 model.log.mean
 
 summary(model.log)
+
+#
