@@ -8,16 +8,13 @@ splited.names <- strsplit(as.character(train$Name), "[,.]")
 require(gdata)
 train$title <- trim(sapply(splited.names, function(x) { x[2] }))
 
-# Age Column from Maria
 # getting mean and stddev by category 
-titleMean <- aggregate(Age ~ title, data=train, mean)
-titleSd <- aggregate(Age ~ title, data=train, sd)
-colnames(titleSd)[2] <- "Sd"
-colnames(titleMean)[2] <- "Mean"
-stats <- merge(titleMean, titleSd, by="title")
-# adding group mean and SD as columns to train dataset 
-# later will use those values to draw numbers from normal distribution 
-train <- merge(train, stats, by="title")
+# later will use those values to draw numbers from normal distribution
+library(plyr)
+train <- ddply(train, .(title), mutate, 
+               Mean=ave(Age, FUN=function(x){mean(x, na.rm=TRUE)}), 
+               Sd=ave(Age, FUN=function(x){sd(x, na.rm=TRUE)}))
+
 #install.packages("Runuran")
 library(Runuran)
 # variable for the new age values 
