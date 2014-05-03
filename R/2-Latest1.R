@@ -73,8 +73,11 @@ coef(reg.best,5)
 
 # Building Model
 #perform ridge regression
-x=model.matrix(Survived~Pclass+Sex+SibSp+Embarked+age2,train)[,-1]
-y=train$Survived
+# Remove Embarked == ""
+new.train <- train[train$Embarked %in% c("C", "Q", "S"), ]
+new.train$Embarked <- as.factor(as.character(new.train$Embarked))
+x=model.matrix(Survived~Pclass+Sex+SibSp+Embarked+age2,new.train)[,-1]
+y=new.train$Survived
 Z=model.matrix(PassengerId~Pclass+Sex+SibSp+Embarked+age2,test)[,-1]
 grid=10^seq(10,-2,length=100)
 library(glmnet)
@@ -111,12 +114,12 @@ bestlam=cv.out$lambda.min
 bestlam
 ridge.pred=predict(ridge.mod,s=bestlam,newx=Z)
 pred.ridge=rep(0,417)
-pred.ridge[ridge.pred>.55]=1 
+pred.ridge[ridge.pred>.50]=1 
 table(pred.ridge)
 Survived = pred.ridge
 PassengerId <- test$PassengerId
 Submit =data.frame(PassengerId,Survived)
-write.csv(Submit, file="ProcessedData/Submit2.csv")
+write.csv(Submit, file="ProcessedData/Submit.csv")
 
 # buidling a model with Lasso and using cross validation to select lambda
 lasso.mod=glmnet(x,y,alpha=1,lambda=grid)
@@ -127,7 +130,7 @@ plot(cv.out)
 bestlam=cv.out$lambda.min
 lasso.pred=predict(lasso.mod,s=bestlam,newx=Z)
 pred.ridge=rep(0,417)
-pred.ridge[lasso.pred>.45]=1
+pred.ridge[lasso.pred>.40]=1
 table(pred.ridge)
 Survived = pred.ridge
 PassengerId <- test$PassengerId
@@ -150,6 +153,7 @@ write.csv(Submit, file="ProcessedData/Submit8.csv")
 
 #Building a model with random forect
 library(randomForest)
-forest <- randomForest(Survived~Pclass+Sex+SibSp+age2,data=train,prox=T)
+forest <- randomForest(Survived~Pclass+Sex+SibSp+Embarked+age2,data=new.train,prox=T)
 pred <- predict(forest,test)
-pred.ridge[pred>.55]=1 
+pred.ridge=rep(0,417)
+pred.ridge[pred>.50]=1 
